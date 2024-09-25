@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from database import get_async_session
 from notes.schemas import *
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 from fastapi import FastAPI, Depends, HTTPException
 from datetime import datetime
 
@@ -33,4 +33,27 @@ async def add_note(note: Note, session: AsyncSession = Depends(get_async_session
             "status": "error",
             "data": None,
             "details": "Not unique note title for this user"
+        })
+
+
+@app.post("/get_note")  # по-хорошему переделать на get, но при этом не безопасно так передавать user_id
+async def get_note(user_id: int, note_title: str, session: AsyncSession = Depends(get_async_session)):
+    try:
+        query = select(notes_table).where(notes_table.c.user_id == user_id and notes_table.c.note_title == note_title)
+        result = await session.execute(query)
+        result = result.mappings().all()[0]
+        data = {
+            "note_title": result["note_title"],
+            "note_text": result["note_text"]
+        }
+        return {
+            "status": "200",
+            "data": data,
+            "details": None
+        }
+    except:
+        raise HTTPException(status_code=500, detail={
+            "status": "error",
+            "data": None,
+            "details": None
         })
