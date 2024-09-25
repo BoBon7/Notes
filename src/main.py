@@ -39,16 +39,29 @@ async def add_note(note: Note, session: AsyncSession = Depends(get_async_session
 @app.post("/get_note")  # по-хорошему переделать на get, но при этом не безопасно так передавать user_id
 async def get_note(user_id: int, note_title: str, session: AsyncSession = Depends(get_async_session)):
     try:
-        query = select(notes_table).where(notes_table.c.user_id == user_id and notes_table.c.note_title == note_title)
+        query = select(notes_table.c.note_title, notes_table.c.note_text).where(notes_table.c.user_id == user_id and notes_table.c.note_title == note_title)
         result = await session.execute(query)
-        result = result.mappings().all()[0]
-        data = {
-            "note_title": result["note_title"],
-            "note_text": result["note_text"]
-        }
         return {
-            "status": "200",
-            "data": data,
+            "status": "success",
+            "data": result.mappings().all(),
+            "details": None
+        }
+    except:
+        raise HTTPException(status_code=500, detail={
+            "status": "error",
+            "data": None,
+            "details": None
+        })
+
+
+@app.post("/get_all")
+async def get_all(user_id: int, session: AsyncSession = Depends(get_async_session)):
+    try:
+        query = select(notes_table.c.note_title, notes_table.c.note_text).where(notes_table.c.user_id == user_id)
+        result = await session.execute(query)
+        return {
+            "status": "success",
+            "data": result.mappings().all(),
             "details": None
         }
     except:
