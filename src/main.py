@@ -89,7 +89,7 @@ async def change_note(user_id: int, note_title: str, note_text: str, new_title: 
                 .values(note_text=note_text, updated_at=datetime.utcnow()))
         await session.execute(stmt)
         await session.commit()
-        return {"status": "success", "data": f"Changed", "details": None}
+        return {"status": "success", "data": f"Changed note '{note_title}'", "details": None}
     except IntegrityError:
         raise HTTPException(status_code=500, detail={
             "status": "error",
@@ -104,7 +104,22 @@ async def delete_note(user_id: int, note_title: str, session: AsyncSession = Dep
         stmt = delete(notes_table).where(notes_table.c.user_id == user_id).where(notes_table.c.note_title == note_title)
         await session.execute(stmt)
         await session.commit()
-        return {"status": "success", "data": f"Deleted", "details": None}
+        return {"status": "success", "data": f"Deleted note '{note_title}'", "details": None}
+    except:
+        raise HTTPException(status_code=500, detail={
+            "status": "error",
+            "data": None,
+            "details": None
+        })
+
+
+@app.delete("/delete_all")
+async def delete_note(user_id: int, session: AsyncSession = Depends(get_async_session)):
+    try:
+        stmt = delete(notes_table).where(notes_table.c.user_id == user_id)
+        await session.execute(stmt)
+        await session.commit()
+        return {"status": "success", "data": f"All notes deleted", "details": None}
     except:
         raise HTTPException(status_code=500, detail={
             "status": "error",
