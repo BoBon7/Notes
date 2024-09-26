@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from database import get_async_session
 from notes.schemas import *
-from sqlalchemy import insert, select, update, values
+from sqlalchemy import insert, select, update, delete
 
 from fastapi import FastAPI, Depends, HTTPException
 from datetime import datetime
@@ -77,17 +77,17 @@ async def get_all(user_id: int, session: AsyncSession = Depends(get_async_sessio
 @app.patch("/change_note")
 async def change_note(user_id: int, note_title: str, note_text: str, new_title: str = None,
                       session: AsyncSession = Depends(get_async_session)):
-    query = ""
+    stmt = ""
     try:
         if note_title:
-            query = (
+            stmt = (
                 update(notes_table).where(notes_table.c.user_id == user_id and notes_table.c.note_title == note_title)
                 .values(note_title=new_title, note_text=note_text, updated_at=datetime.utcnow()))
         else:
-            query = (
+            stmt = (
                 update(notes_table).where(notes_table.c.user_id == user_id and notes_table.c.note_title == note_title)
                 .values(note_text=note_text, updated_at=datetime.utcnow()))
-        await session.execute(query)
+        await session.execute(stmt)
         await session.commit()
         return {"status": "success", "data": f"Changed", "details": None}
     except IntegrityError:
@@ -96,3 +96,20 @@ async def change_note(user_id: int, note_title: str, note_text: str, new_title: 
             "data": None,
             "details": "Not unique note title for this user"
         })
+
+
+@app.delete("/delete_note")
+async def delete_note(user_id: int, note_title: str, session: AsyncSession = Depends(get_async_session)):
+    try:
+        stmt = delete(notes_table).where(notes_table.c.user_id == user_id).where(notes_table.c.note_title == note_title)
+        await session.execute(stmt)
+        await session.commit()
+        return {"status": "success", "data": f"Deleted", "details": None}
+    except:
+        raise HTTPException(status_code=500, detail={
+            "status": "error",
+            "data": None,
+            "details": None
+        })
+
+# TODO если не происходит изменений в бд, то нужно возвращать ответ об этом, а не возвращать статус success
