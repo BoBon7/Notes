@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import Integer, String, TIMESTAMP, ForeignKey, Table, Column, UniqueConstraint, MetaData, JSON
-
+from sqlalchemy import (Integer, String, TIMESTAMP, ForeignKey,
+                        Table, Column, UniqueConstraint, MetaData, PrimaryKeyConstraint)
 
 metadata = MetaData()
 
@@ -14,5 +14,6 @@ notes_table = Table(
     Column("note_text", String(length=500)),
     Column("crated_at", TIMESTAMP, default=datetime.utcnow),
     Column("updated_at", TIMESTAMP, default=datetime.utcnow),
-    UniqueConstraint("user_id", "note_title", name="unique_user_note"),
+    PrimaryKeyConstraint("user_id", "note_title", name="unique_user_note"),
+    # TODO переделать ограничение уникальности на первичный ключ, причем указать столбцы в правильном порядке
 )
