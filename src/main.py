@@ -9,6 +9,8 @@ from fastapi import FastAPI, Depends, HTTPException
 from datetime import datetime
 
 from notes.models import notes_table
+from src.auth.base_config import fastapi_users, auth_backend
+from src.auth.schemas import UserRead, UserCreate
 
 app = FastAPI()
 
@@ -16,6 +18,19 @@ app = FastAPI()
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/auth",
+    tags=["Auth"],
+)
+
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["Auth"],
+)
 
 
 @app.post("/add_note")
